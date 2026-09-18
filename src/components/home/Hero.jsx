@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Search,
   MapPin,
@@ -51,6 +51,7 @@ const features = [
 ];
 
 export default function Hero() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("buy");
   const [searchData, setSearchData] = useState({
     location: "",
@@ -67,7 +68,7 @@ export default function Hero() {
     if (searchData.minPrice) params.set("minPrice", searchData.minPrice);
     if (searchData.maxPrice) params.set("maxPrice", searchData.maxPrice);
     params.set("listingType", activeTab);
-    window.location.href = `/properties?${params.toString()}`;
+    navigate(`/properties?${params.toString()}`);
   };
 
   return (
@@ -174,7 +175,7 @@ export default function Hero() {
                       placeholder="Location, city, neighborhood..."
                       value={searchData.location}
                       onChange={(e) => setSearchData({ ...searchData, location: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     />
                   </div>
                   <div className="relative sm:col-span-2 md:col-span-1">
@@ -182,7 +183,7 @@ export default function Hero() {
                     <select
                       value={searchData.type}
                       onChange={(e) => setSearchData({ ...searchData, type: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
                     >
                       <option value="">Property Type</option>
                       <option value="house">House</option>
@@ -198,7 +199,7 @@ export default function Hero() {
                       placeholder="Min Price"
                       value={searchData.minPrice}
                       onChange={(e) => setSearchData({ ...searchData, minPrice: e.target.value })}
-                      className="w-full pl-8 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                      className="w-full pl-8 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     />
                   </div>
                   <div className="relative sm:col-span-1 md:col-span-1">
@@ -208,7 +209,7 @@ export default function Hero() {
                       placeholder="Max Price"
                       value={searchData.maxPrice}
                       onChange={(e) => setSearchData({ ...searchData, maxPrice: e.target.value })}
-                      className="w-full pl-8 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                      className="w-full pl-8 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     />
                   </div>
                   <div className="sm:col-span-2 md:col-span-1">

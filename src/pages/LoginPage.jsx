@@ -69,14 +69,15 @@ export default function LoginPage() {
       }
       toast.success(`Welcome back, ${user.name.split(" ")[0]}!`);
       setTimeout(() => {
+        setIsLoading(false);
         if (user.role === "admin") navigate("/admin");
         else navigate("/dashboard");
       }, 600);
     } else {
       setErrors({ form: "Invalid credentials. Try a demo account below (password: 123456)" });
       toast.error("Invalid email or password");
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (

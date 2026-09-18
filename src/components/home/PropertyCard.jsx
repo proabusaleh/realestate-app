@@ -47,19 +47,16 @@ export default function PropertyCard({ property, variant = "grid" }) {
   const handleShare = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    const url = `${window.location.origin}/property/${property.id}`;
     if (navigator.share) {
       navigator.share({
         title: property.title,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
+        text: property.title,
+        url,
+      }).catch(() => {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).catch(() => {});
     }
-  };
-
-  const handleView = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
   };
 
   const getTypeBadge = () => {
@@ -74,7 +71,7 @@ export default function PropertyCard({ property, variant = "grid" }) {
       <Link to={`/property/${property.id}`} className="block group">
         <div className="card-hover flex flex-col md:flex-row overflow-hidden group-hover:shadow-soft-lg transition-all duration-300">
           {/* Image */}
-          <div className="relative md:w-72 md:min-w-[288px] flex-shrink-0 overflow-hidden">
+          <div className="relative h-56 sm:h-64 md:h-auto md:min-h-[260px] md:w-72 md:min-w-[288px] flex-shrink-0 overflow-hidden">
             {!isLoaded && (
               <div className="absolute inset-0 shimmer animate-shimmer bg-gray-200 dark:bg-gray-700" />
             )}
@@ -227,13 +224,12 @@ export default function PropertyCard({ property, variant = "grid" }) {
                 <span className="text-sm font-medium text-gray-900 dark:text-white truncate block">{property.agent}</span>
                 <div className="text-xs text-gray-500 dark:text-gray-400">Listing Agent</div>
               </div>
-              <button
-                onClick={handleView}
-                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-xl transition"
-                aria-label="View property"
+              <span
+                className="p-2 text-gray-400 group-hover:text-blue-600 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 rounded-xl transition"
+                aria-hidden="true"
               >
                 <Eye size={16} />
-              </button>
+              </span>
             </div>
           </div>
         </div>
@@ -329,14 +325,13 @@ export default function PropertyCard({ property, variant = "grid" }) {
           </div>
 
           {/* Quick View Button */}
-          <button
-            onClick={handleView}
-            className="absolute bottom-4 right-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm px-4 py-2.5 rounded-2xl shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-2 group-hover:translate-y-0 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
-            aria-label="Quick view"
+          <span
+            className="absolute bottom-4 right-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm px-4 py-2.5 rounded-2xl shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-2 group-hover:translate-y-0 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+            aria-hidden="true"
           >
             <Eye size={16} />
             <span className="hidden sm:inline">Quick View</span>
-          </button>
+          </span>
         </div>
 
         {/* Content */}

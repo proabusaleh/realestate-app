@@ -11,9 +11,10 @@ import {
   LogIn,
   UserPlus,
   Heart,
-  User as UserIcon,
   LogOut,
-  ShoppingCart,
+  Newspaper,
+  LayoutDashboard,
+  ShieldCheck,
   Bell,
   Sun,
   Moon,
@@ -30,7 +31,7 @@ const navLinks = [
   { name: "Agents", path: "/agents", icon: Users },
   { name: "About", path: "/about", icon: Info },
   { name: "Contact", path: "/contact", icon: Phone },
-  { name: "Blog", path: "/blog", icon: ShoppingCart },
+  { name: "Blog", path: "/blog", icon: Newspaper },
 ];
 
 function getInitialTheme() {
@@ -45,7 +46,7 @@ export default function Navbar() {
   const [isDark, setIsDark] = useState(getInitialTheme);
   const [profileOpen, setProfileOpen] = useState(false);
   const location = useLocation();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, isAdmin } = useAuth();
   const { count } = useFavorites();
   const { count: compareCount } = useCompare();
 
@@ -213,7 +214,7 @@ export default function Navbar() {
                         onClick={() => setProfileOpen(false)}
                         className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
                       >
-                        <UserIcon size={18} />
+                        <LayoutDashboard size={18} className="text-blue-500" />
                         Dashboard
                       </Link>
                       <Link
@@ -229,6 +230,29 @@ export default function Navbar() {
                           </span>
                         )}
                       </Link>
+                      <Link
+                        to="/compare"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        <GitCompareArrows size={18} className="text-blue-500" />
+                        Compare
+                        {compareCount > 0 && (
+                          <span className="ml-auto px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full dark:bg-blue-900/30 dark:text-blue-300">
+                            {compareCount}
+                          </span>
+                        )}
+                      </Link>
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                        >
+                          <ShieldCheck size={18} className="text-purple-500" />
+                          Admin Panel
+                        </Link>
+                      )}
                       <hr className="my-2 border-gray-100 dark:border-gray-700" />
                       <button
                         onClick={handleLogout}
@@ -246,7 +270,7 @@ export default function Navbar() {
                 <Link
                   to="/login"
                   onClick={closeMobileMenu}
-                  className="flex items-center gap-2 px-5 py-2.5 text-gray-700 hover:text-blue-600 font-medium rounded-xl hover:bg-gray-50 dark:text-gray-300 dark:hover:text-blue-400 dark:hover:bg-gray-800 transition"
+                  className="flex items-center gap-2 px-5 py-2.5 text-sm text-gray-700 hover:text-blue-600 font-semibold rounded-xl hover:bg-gray-50 dark:text-gray-300 dark:hover:text-blue-400 dark:hover:bg-gray-800 transition"
                 >
                   <LogIn size={18} />
                   Login
@@ -254,7 +278,7 @@ export default function Navbar() {
                 <Link
                   to="/register"
                   onClick={closeMobileMenu}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-600/30 transition transform hover:scale-[1.02]"
+                  className="flex items-center gap-2 px-5 py-2.5 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-600/30 transition transform hover:scale-[1.02]"
                 >
                   <UserPlus size={18} />
                   Sign Up
@@ -281,7 +305,7 @@ export default function Navbar() {
         id="mobile-menu"
         className={`lg:hidden overflow-hidden transition-all duration-300 ${
           isOpen
-            ? "max-h-[600px] opacity-100 visible pb-4"
+            ? "max-h-[720px] opacity-100 visible pb-4"
             : "max-h-0 opacity-0 invisible"
         }`}
       >
@@ -310,9 +334,19 @@ export default function Navbar() {
                   onClick={closeMobileMenu}
                   className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 rounded-xl font-medium"
                 >
-                  <UserIcon size={20} />
+                  <LayoutDashboard size={20} className="text-blue-500" />
                   Dashboard
                 </Link>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={closeMobileMenu}
+                    className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 rounded-xl font-medium"
+                  >
+                    <ShieldCheck size={20} className="text-purple-500" />
+                    Admin Panel
+                  </Link>
+                )}
                 <Link
                   to="/favorites"
                   onClick={closeMobileMenu}

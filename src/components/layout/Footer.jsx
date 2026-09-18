@@ -109,6 +109,9 @@ export default function Footer() {
                 { label: "About", to: "/about" },
                 { label: "Contact", to: "/contact" },
                 { label: "Blog", to: "/blog" },
+                { label: "Compare", to: "/compare" },
+                { label: "Dashboard", to: "/dashboard" },
+                { label: "Favorites", to: "/favorites" },
               ].map((item) => (
                 <li key={item.label}>
                   <Link
@@ -198,8 +201,8 @@ export default function Footer() {
             © {new Date().getFullYear()} DreamEstate. All rights reserved.
           </p>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
-            <Link to="/privacy" className="hover:text-blue-400 transition-colors">Privacy Policy</Link>
-            <Link to="/terms" className="hover:text-blue-400 transition-colors">Terms of Service</Link>
+            <Link to="/compare" className="hover:text-blue-400 transition-colors">Compare</Link>
+            <Link to="/dashboard" className="hover:text-blue-400 transition-colors">Dashboard</Link>
             <Link to="/contact" className="hover:text-blue-400 transition-colors">Support</Link>
           </div>
         </div>

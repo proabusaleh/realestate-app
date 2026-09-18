@@ -73,10 +73,10 @@ export default function RegisterPage() {
     toast.success("Account created successfully. Welcome!");
 
     setTimeout(() => {
+      setIsLoading(false);
       if (newUser.role === "admin") navigate("/admin");
       else navigate("/dashboard");
     }, 600);
-    setIsLoading(false);
   };
 
   const strength = (() => {
@@ -231,6 +231,9 @@ export default function RegisterPage() {
 
               <div>
                 <label htmlFor="password" className="label">Password</label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+                  Min 6 characters with uppercase, lowercase &amp; number
+                </p>
                 <div className="relative">
                   <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
@@ -314,18 +317,30 @@ export default function RegisterPage() {
                   <input
                     type="checkbox"
                     checked={agreed}
-                    onChange={(e) => setAgreed(e.target.checked)}
+                    onChange={(e) => {
+                      setAgreed(e.target.checked);
+                      if (e.target.checked && errors.terms)
+                        setErrors((prev) => ({ ...prev, terms: "" }));
+                    }}
                     className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <span className="text-sm text-gray-600 dark:text-gray-300">
                     I agree to the{" "}
-                    <Link to="/terms" className="text-blue-600 dark:text-blue-400 hover:underline">
+                    <button
+                      type="button"
+                      onClick={() => toast.info("Terms of Service coming soon")}
+                      className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                    >
                       Terms of Service
-                    </Link>{" "}
+                    </button>{" "}
                     and{" "}
-                    <Link to="/privacy" className="text-blue-600 dark:text-blue-400 hover:underline">
+                    <button
+                      type="button"
+                      onClick={() => toast.info("Privacy Policy coming soon")}
+                      className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                    >
                       Privacy Policy
-                    </Link>
+                    </button>
                   </span>
                 </label>
                 {errors.terms && (

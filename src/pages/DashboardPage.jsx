@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import {
   User, Heart, MessageSquare, Settings,
   LogOut, Camera, Edit3, Save, X,
   Building2, MapPin, BedDouble, Bath,
-  Trash2, Eye, Star, Calendar
+  Trash2, Eye,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useFavorites } from "../hooks/useFavorites";
+import { useToast } from "../context/ToastContext";
 import { properties } from "../data/properties";
 
 const tabs = [
@@ -17,11 +18,62 @@ const tabs = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
+const mockInquiries = [
+  {
+    property: "Modern Luxury Villa",
+    agent: "John Smith",
+    date: "2 days ago",
+    message: "I'm interested in scheduling a viewing for this property. Is it available this weekend?",
+    status: "Replied",
+    statusClasses: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+    reply: "Hi! Yes, the property is available this Saturday at 2 PM. Shall I confirm?",
+  },
+  {
+    property: "Downtown Penthouse",
+    agent: "Sarah Johnson",
+    date: "5 days ago",
+    message: "What are the lease terms? Is there a minimum rental period?",
+    status: "Pending",
+    statusClasses: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+    reply: null,
+  },
+  {
+    property: "Beachfront Condo",
+    agent: "Emily Chen",
+    date: "1 week ago",
+    message: "Is the condo pet-friendly? I have a small dog.",
+    status: "New",
+    statusClasses: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+    reply: null,
+  },
+];
+
+const notificationDefaults = [
+  { title: "Email Notifications", desc: "Updates about new listings matching your criteria", on: true },
+  { title: "Price Drop Alerts", desc: "Get notified when a saved property's price decreases", on: true },
+  { title: "New Listing Alerts", desc: "Be the first to know about new properties in your area", on: false },
+  { title: "Agent Messages", desc: "Notifications when agents reply to your inquiries", on: true },
+  { title: "Newsletter", desc: "Weekly market trends and real estate tips", on: false },
+];
+
 export default function DashboardPage() {
   const { user, isAuthenticated, updateProfile, logout } = useAuth();
   const { favorites, removeFavorite } = useFavorites();
-  const [activeTab, setActiveTab] = useState("profile");
+  const toast = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(
+    location.pathname === "/favorites" ? "favorites" : "profile"
+  );
+  const [syncedPath, setSyncedPath] = useState(location.pathname);
+
+  // Open the Favorites tab when landing on /favorites (e.g. from the navbar)
+  if (location.pathname !== syncedPath) {
+    setSyncedPath(location.pathname);
+    setActiveTab(location.pathname === "/favorites" ? "favorites" : "profile");
+  }
   const [editing, setEditing] = useState(false);
+  const [notifications, setNotifications] = useState(notificationDefaults);
   const [profile, setProfile] = useState({
     name: user?.name || "",
     email: user?.email || "",
@@ -32,36 +84,69 @@ export default function DashboardPage() {
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
-  const favoriteProperties = properties.filter((p) =>
-    favorites.includes(p.id)
-  );
+  const favoriteProperties = properties.filter((p) => favorites.includes(p.id));
+  const avatar = user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.name || "user")}`;
+  const firstName = user?.name?.split(" ")[0] || "there";
 
   const handleSaveProfile = () => {
     updateProfile({ name: profile.name, email: profile.email });
     setEditing(false);
+    toast.success("Profile updated successfully");
+  };
+
+  const handleRemoveFavorite = (id, title) => {
+    removeFavorite(id);
+    toast.info(`Removed "${title}" from favorites`);
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast.info("You've been signed out");
+    navigate("/");
+  };
+
+  const handlePasswordUpdate = (e) => {
+    e.preventDefault();
+    toast.success("Password updated successfully");
+    e.target.reset();
+  };
+
+  const handleDeleteAccount = () => {
+    if (window.confirm("Are you sure you want to delete your account? This cannot be undone.")) {
+      logout();
+      toast.info("Your account has been deleted");
+      navigate("/");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-6">
-            <div className="relative">
+      <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 py-12 overflow-hidden">
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+          <div className="absolute -top-10 right-10 w-72 h-72 bg-white rounded-full blur-3xl" />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex items-center gap-5 sm:gap-6">
+            <div className="relative shrink-0">
               <img
-                src={user.avatar}
-                alt={user.name}
-                className="w-20 h-20 rounded-2xl object-cover ring-4 ring-white/20"
+                src={avatar}
+                alt={user?.name || "User"}
+                className="w-20 h-20 rounded-2xl object-cover ring-4 ring-white/20 bg-white/20"
               />
-              <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow">
+              <button
+                className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow hover:scale-110 transition"
+                aria-label="Change profile photo"
+                onClick={() => toast.info("Photo upload coming soon")}
+              >
                 <Camera size={14} className="text-gray-600" />
               </button>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">
-                Welcome back, {user.name.split(" ")[0]}! 👋
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-white truncate">
+                Welcome back, {firstName}!
               </h1>
-              <p className="text-blue-200">
+              <p className="text-blue-200 text-sm sm:text-base">
                 Manage your profile, favorites, and inquiries
               </p>
             </div>
@@ -73,32 +158,33 @@ export default function DashboardPage() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
           <aside className="lg:w-64 shrink-0">
-            <div className="bg-white rounded-2xl shadow-sm border p-4 sticky top-28">
+            <div className="card p-4 lg:sticky lg:top-28">
               <nav className="space-y-1">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
+                    aria-current={activeTab === tab.id ? "page" : undefined}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition ${
                       activeTab === tab.id
-                        ? "bg-blue-50 text-blue-700"
-                        : "text-gray-600 hover:bg-gray-50"
+                        ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                        : "text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
                     }`}
                   >
                     <tab.icon size={18} />
                     {tab.label}
                     {tab.id === "favorites" && favorites.length > 0 && (
-                      <span className="ml-auto bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full font-bold">
+                      <span className="ml-auto bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300 text-xs px-2 py-0.5 rounded-full font-bold">
                         {favorites.length}
                       </span>
                     )}
                   </button>
                 ))}
               </nav>
-              <hr className="my-4" />
+              <hr className="my-4 border-gray-200 dark:border-gray-700" />
               <button
-                onClick={logout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition"
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 transition"
               >
                 <LogOut size={18} />
                 Logout
@@ -107,25 +193,25 @@ export default function DashboardPage() {
           </aside>
 
           {/* Content */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {/* PROFILE TAB */}
             {activeTab === "profile" && (
-              <div className="bg-white rounded-2xl shadow-sm border p-8">
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-xl font-bold text-gray-900">
+              <div className="card p-6 sm:p-8 animate-fade-in">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                     Personal Information
                   </h2>
                   {editing ? (
                     <div className="flex gap-2">
                       <button
                         onClick={handleSaveProfile}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition"
                       >
                         <Save size={14} /> Save
                       </button>
                       <button
                         onClick={() => setEditing(false)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200"
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition"
                       >
                         <X size={14} /> Cancel
                       </button>
@@ -133,7 +219,7 @@ export default function DashboardPage() {
                   ) : (
                     <button
                       onClick={() => setEditing(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100"
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-xl text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-900/50 transition"
                     >
                       <Edit3 size={14} /> Edit
                     </button>
@@ -142,55 +228,47 @@ export default function DashboardPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {[
-                    { label: "Full Name", key: "name" },
-                    { label: "Email", key: "email" },
-                    { label: "Phone", key: "phone" },
-                    { label: "Location", key: "location" },
+                    { label: "Full Name", key: "name", type: "text" },
+                    { label: "Email", key: "email", type: "email" },
+                    { label: "Phone", key: "phone", type: "tel" },
+                    { label: "Location", key: "location", type: "text" },
                   ].map((field) => (
                     <div key={field.key}>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        {field.label}
-                      </label>
+                      <label className="label">{field.label}</label>
                       <input
-                        type="text"
+                        type={field.type}
                         value={profile[field.key]}
-                        onChange={(e) =>
-                          setProfile({ ...profile, [field.key]: e.target.value })
-                        }
+                        onChange={(e) => setProfile({ ...profile, [field.key]: e.target.value })}
                         disabled={!editing}
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-70"
+                        className="input disabled:opacity-70"
                       />
                     </div>
                   ))}
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Bio
-                    </label>
+                    <label className="label">Bio</label>
                     <textarea
                       value={profile.bio}
-                      onChange={(e) =>
-                        setProfile({ ...profile, bio: e.target.value })
-                      }
+                      onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
                       disabled={!editing}
                       rows={3}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-70 resize-none"
+                      className="input disabled:opacity-70 resize-none"
                     />
                   </div>
                 </div>
 
                 {/* Account Stats */}
-                <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t">
-                  <div className="text-center p-4 bg-blue-50 rounded-xl">
-                    <p className="text-2xl font-bold text-blue-600">{favorites.length}</p>
-                    <p className="text-xs text-gray-500 mt-1">Favorites</p>
+                <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+                  <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl">
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{favorites.length}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Favorites</p>
                   </div>
-                  <div className="text-center p-4 bg-green-50 rounded-xl">
-                    <p className="text-2xl font-bold text-green-600">3</p>
-                    <p className="text-xs text-gray-500 mt-1">Inquiries</p>
+                  <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-2xl">
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{mockInquiries.length}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Inquiries</p>
                   </div>
-                  <div className="text-center p-4 bg-purple-50 rounded-xl">
-                    <p className="text-2xl font-bold text-purple-600">12</p>
-                    <p className="text-xs text-gray-500 mt-1">Views</p>
+                  <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-2xl">
+                    <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">12</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Views</p>
                   </div>
                 </div>
               </div>
@@ -198,23 +276,26 @@ export default function DashboardPage() {
 
             {/* FAVORITES TAB */}
             {activeTab === "favorites" && (
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-6">
+              <div className="animate-fade-in">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
                   My Favorite Properties ({favoriteProperties.length})
                 </h2>
                 {favoriteProperties.length === 0 ? (
-                  <div className="bg-white rounded-2xl p-16 text-center shadow-sm border">
-                    <Heart size={48} className="mx-auto text-gray-300 mb-4" />
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  <div className="card p-16 text-center">
+                    <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-3xl flex items-center justify-center">
+                      <Heart size={36} className="text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                       No Favorites Yet
                     </h3>
-                    <p className="text-gray-500 mb-6">
+                    <p className="text-gray-500 dark:text-gray-400 mb-6">
                       Start browsing and save properties you love!
                     </p>
                     <Link
                       to="/properties"
-                      className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition"
                     >
+                      <Building2 size={18} />
                       Browse Properties
                     </Link>
                   </div>
@@ -223,23 +304,28 @@ export default function DashboardPage() {
                     {favoriteProperties.map((p) => (
                       <div
                         key={p.id}
-                        className="bg-white rounded-2xl p-4 shadow-sm border flex flex-col sm:flex-row gap-4 hover:shadow-md transition"
+                        className="card p-4 flex flex-col sm:flex-row gap-4 hover:shadow-soft-lg transition"
                       >
-                        <img
-                          src={p.image}
-                          alt={p.title}
-                          className="w-full sm:w-48 h-36 object-cover rounded-xl"
-                        />
-                        <div className="flex-1 flex flex-col justify-between">
+                        <Link to={`/property/${p.id}`} className="shrink-0">
+                          <img
+                            src={p.image}
+                            alt={p.title}
+                            loading="lazy"
+                            className="w-full sm:w-48 h-40 sm:h-36 object-cover rounded-xl"
+                          />
+                        </Link>
+                        <div className="flex-1 min-w-0 flex flex-col justify-between">
                           <div>
-                            <h3 className="font-bold text-gray-900 text-lg">
-                              {p.title}
-                            </h3>
-                            <p className="flex items-center gap-1 text-gray-500 text-sm mt-1">
-                              <MapPin size={14} className="text-blue-500" />
-                              {p.address}
+                            <Link to={`/property/${p.id}`}>
+                              <h3 className="font-bold text-gray-900 dark:text-white text-lg hover:text-blue-600 dark:hover:text-blue-400 transition truncate">
+                                {p.title}
+                              </h3>
+                            </Link>
+                            <p className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-sm mt-1">
+                              <MapPin size={14} className="text-blue-500 shrink-0" />
+                              <span className="truncate">{p.address}</span>
                             </p>
-                            <div className="flex gap-4 mt-2 text-sm text-gray-500">
+                            <div className="flex gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
                               <span className="flex items-center gap-1">
                                 <BedDouble size={14} /> {p.bedrooms} Beds
                               </span>
@@ -248,24 +334,24 @@ export default function DashboardPage() {
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center justify-between mt-3">
-                            <span className="text-xl font-bold text-blue-600">
+                          <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
+                            <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
                               ${p.price.toLocaleString()}
-                              {p.type === "rent" && "/mo"}
+                              {p.type === "rent" && <span className="text-sm text-gray-400">/mo</span>}
                             </span>
                             <div className="flex gap-2">
                               <Link
                                 to={`/property/${p.id}`}
-                                className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100"
+                                className="flex items-center gap-1 px-4 py-2 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-xl text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-900/50 transition"
                               >
-                                <Eye size={14} className="inline mr-1" />
+                                <Eye size={14} />
                                 View
                               </Link>
                               <button
-                                onClick={() => removeFavorite(p.id)}
-                                className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100"
+                                onClick={() => handleRemoveFavorite(p.id, p.title)}
+                                className="flex items-center gap-1 px-4 py-2 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-300 rounded-xl text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition"
                               >
-                                <Trash2 size={14} className="inline mr-1" />
+                                <Trash2 size={14} />
                                 Remove
                               </button>
                             </div>
@@ -280,66 +366,36 @@ export default function DashboardPage() {
 
             {/* INQUIRIES TAB */}
             {activeTab === "inquiries" && (
-              <div className="bg-white rounded-2xl shadow-sm border p-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">
+              <div className="card p-6 sm:p-8 animate-fade-in">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
                   My Inquiries
                 </h2>
                 <div className="space-y-4">
-                  {[
-                    {
-                      property: "Modern Luxury Villa",
-                      agent: "John Smith",
-                      date: "2 days ago",
-                      message: "I'm interested in scheduling a viewing for this property. Is it available this weekend?",
-                      status: "Replied",
-                      statusColor: "bg-green-100 text-green-700",
-                      reply: "Hi! Yes, the property is available this Saturday at 2 PM. Shall I confirm?",
-                    },
-                    {
-                      property: "Downtown Penthouse",
-                      agent: "Sarah Johnson",
-                      date: "5 days ago",
-                      message: "What are the lease terms? Is there a minimum rental period?",
-                      status: "Pending",
-                      statusColor: "bg-amber-100 text-amber-700",
-                      reply: null,
-                    },
-                    {
-                      property: "Beachfront Condo",
-                      agent: "Emily Chen",
-                      date: "1 week ago",
-                      message: "Is the condo pet-friendly? I have a small dog.",
-                      status: "New",
-                      statusColor: "bg-blue-100 text-blue-700",
-                      reply: null,
-                    },
-                  ].map((inq, i) => (
+                  {mockInquiries.map((inq, i) => (
                     <div
                       key={i}
-                      className="p-5 bg-gray-50 rounded-xl border border-gray-100 hover:shadow-md transition"
+                      className="p-5 bg-gray-50 dark:bg-gray-700/50 rounded-2xl border border-gray-100 dark:border-gray-700 hover:shadow-soft transition"
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                         <div>
-                          <h3 className="font-bold text-gray-900">
+                          <h3 className="font-bold text-gray-900 dark:text-white">
                             {inq.property}
                           </h3>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             Agent: {inq.agent} • {inq.date}
                           </p>
                         </div>
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-bold ${inq.statusColor} w-fit`}
-                        >
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold w-fit ${inq.statusClasses}`}>
                           {inq.status}
                         </span>
                       </div>
-                      <p className="text-gray-600 text-sm mb-3">
+                      <p className="text-gray-600 dark:text-gray-300 text-sm mb-3">
                         <span className="font-semibold">You: </span>
                         {inq.message}
                       </p>
                       {inq.reply && (
-                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                          <p className="text-blue-800 text-sm">
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                          <p className="text-blue-800 dark:text-blue-200 text-sm">
                             <span className="font-semibold">Agent Reply: </span>
                             {inq.reply}
                           </p>
@@ -353,116 +409,84 @@ export default function DashboardPage() {
 
             {/* SETTINGS TAB */}
             {activeTab === "settings" && (
-              <div className="space-y-6">
-                {/* Notifications */}
-                <div className="bg-white rounded-2xl shadow-sm border p-8">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">
+              <div className="space-y-6 animate-fade-in">
+                <div className="card p-6 sm:p-8">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
                     Notification Preferences
                   </h2>
-                  <div className="space-y-5">
-                    {[
-                      {
-                        title: "Email Notifications",
-                        desc: "Receive email updates about new listings matching your criteria",
-                        defaultChecked: true,
-                      },
-                      {
-                        title: "Price Drop Alerts",
-                        desc: "Get notified when a saved property's price decreases",
-                        defaultChecked: true,
-                      },
-                      {
-                        title: "New Listing Alerts",
-                        desc: "Be the first to know about new properties in your area",
-                        defaultChecked: false,
-                      },
-                      {
-                        title: "Agent Messages",
-                        desc: "Receive notifications when agents reply to your inquiries",
-                        defaultChecked: true,
-                      },
-                      {
-                        title: "Newsletter",
-                        desc: "Weekly market trends and real estate tips",
-                        defaultChecked: false,
-                      },
-                    ].map((setting) => (
+                  <div className="space-y-4">
+                    {notifications.map((setting) => (
                       <div
                         key={setting.title}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+                        className="flex items-center justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl"
                       >
                         <div>
-                          <h4 className="font-semibold text-gray-900 text-sm">
+                          <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
                             {setting.title}
                           </h4>
-                          <p className="text-gray-500 text-xs mt-0.5">
+                          <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
                             {setting.desc}
                           </p>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            defaultChecked={setting.defaultChecked}
-                            className="sr-only peer"
+                        <button
+                          role="switch"
+                          aria-checked={setting.on}
+                          aria-label={setting.title}
+                          onClick={() => {
+                            setNotifications((prev) =>
+                              prev.map((n) => (n.title === setting.title ? { ...n, on: !n.on } : n))
+                            );
+                            toast.info(`${setting.title} ${setting.on ? "disabled" : "enabled"}`);
+                          }}
+                          className={`relative w-11 h-6 rounded-full transition shrink-0 ${
+                            setting.on ? "bg-blue-600" : "bg-gray-300 dark:bg-gray-600"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-[2px] left-[2px] bg-white rounded-full h-5 w-5 transition-transform ${
+                              setting.on ? "translate-x-full" : ""
+                            }`}
                           />
-                          <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
-                        </label>
+                        </button>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Change Password */}
-                <div className="bg-white rounded-2xl shadow-sm border p-8">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">
+                <div className="card p-6 sm:p-8">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
                     Change Password
                   </h2>
-                  <div className="max-w-md space-y-4">
+                  <form onSubmit={handlePasswordUpdate} className="max-w-md space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Current Password
-                      </label>
-                      <input
-                        type="password"
-                        placeholder="••••••••"
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                      <label className="label">Current Password</label>
+                      <input type="password" required placeholder="••••••••" autoComplete="current-password" className="input" />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        New Password
-                      </label>
-                      <input
-                        type="password"
-                        placeholder="Min 6 characters"
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                      <label className="label">New Password</label>
+                      <input type="password" required minLength={6} placeholder="Min 6 characters" autoComplete="new-password" className="input" />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Confirm New Password
-                      </label>
-                      <input
-                        type="password"
-                        placeholder="Re-enter new password"
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                      <label className="label">Confirm New Password</label>
+                      <input type="password" required placeholder="Re-enter new password" autoComplete="new-password" className="input" />
                     </div>
                     <button className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition">
                       Update Password
                     </button>
-                  </div>
+                  </form>
                 </div>
 
-                {/* Danger Zone */}
-                <div className="bg-white rounded-2xl shadow-sm border border-red-200 p-8">
-                  <h2 className="text-xl font-bold text-red-600 mb-2">
+                <div className="card p-6 sm:p-8 !border-red-200 dark:!border-red-900/50">
+                  <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">
                     Danger Zone
                   </h2>
-                  <p className="text-gray-500 text-sm mb-6">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
                     Once you delete your account, there is no going back.
                   </p>
-                  <button className="px-6 py-3 bg-red-50 text-red-600 border border-red-200 rounded-xl font-semibold hover:bg-red-100 transition">
+                  <button
+                    onClick={handleDeleteAccount}
+                    className="px-6 py-3 bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800 rounded-xl font-semibold hover:bg-red-100 dark:hover:bg-red-900/40 transition"
+                  >
                     Delete My Account
                   </button>
                 </div>

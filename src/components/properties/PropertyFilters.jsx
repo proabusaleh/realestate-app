@@ -85,7 +85,7 @@ export default function PropertyFilters({ filters, setFilters }) {
                 placeholder="Min"
                 value={filters.minPrice}
                 onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
-                className="input pl-7"
+                className="input input-icon-left-sm"
               />
             </div>
             <div className="relative">
@@ -95,7 +95,7 @@ export default function PropertyFilters({ filters, setFilters }) {
                 placeholder="Max"
                 value={filters.maxPrice}
                 onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
-                className="input pl-7"
+                className="input input-icon-left-sm"
               />
             </div>
           </div>

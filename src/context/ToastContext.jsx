@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useMemo } from "react";
 import { CheckCircle, AlertCircle, Info, X } from "lucide-react";
 
 const ToastContext = createContext(null);
@@ -24,12 +24,12 @@ export function ToastProvider({ children }) {
     [dismiss]
   );
 
-  const toast = useCallback(
-    {
+  const toast = useMemo(
+    () => ({
       success: (msg, duration) => push(msg, "success", duration),
       error: (msg, duration) => push(msg, "error", duration),
       info: (msg, duration) => push(msg, "info", duration),
-    },
+    }),
     [push]
   );
 
@@ -77,6 +77,7 @@ export function ToastProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useToast() {
   const ctx = useContext(ToastContext);
   if (!ctx) throw new Error("useToast must be used within a ToastProvider");

@@ -75,5 +75,3 @@ export default function Testimonials() {
     </section>
   );
 }
-
-export const testimonialCards = testimonials;

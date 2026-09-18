@@ -5,7 +5,7 @@ export default function LoadingSpinner({
 }) {
   const sizes = {
     sm: "w-4 h-4 border-2",
-    md: "w-8 h-8 border-3",
+    md: "w-8 h-8 border-[3px]",
     lg: "w-12 h-12 border-4",
     xl: "w-16 h-16 border-4",
   };
@@ -25,15 +25,16 @@ export default function LoadingSpinner({
 
 export function PageLoader() {
   return (
-    <div className="min-h-[60vh] flex items-center justify-center">
+    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-gray-50 dark:bg-gray-900">
       <LoadingSpinner size="lg" />
+      <p className="text-sm text-gray-500 dark:text-gray-400 animate-pulse">Loading...</p>
     </div>
   );
 }
 
 export function CardLoader() {
   return (
-    <div className="h-64 bg-gray-100 rounded-xl animate-pulse" />
+    <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
   );
 }
 
@@ -41,7 +42,7 @@ export function ListLoader({ count = 3 }) {
   return (
     <div className="space-y-6">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="h-80 bg-gray-100 rounded-2xl animate-pulse" />
+        <div key={i} className="h-80 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />
       ))}
     </div>
   );
@@ -50,7 +51,7 @@ export function ListLoader({ count = 3 }) {
 export function Skeleton({ className = "", style }) {
   return (
     <div
-      className={`animate-pulse bg-gray-200 rounded ${className}`}
+      className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className}`}
       style={style}
     />
   );

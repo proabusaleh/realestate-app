@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   BedDouble,
@@ -9,11 +9,12 @@ import {
   Share2,
   Star,
   Tag,
-  Calendar,
-  Check,
   Eye,
+  Home,
+  GitCompareArrows,
 } from "lucide-react";
 import { useFavorites } from "../../hooks/useFavorites";
+import { useCompare } from "../../context/CompareContext";
 
 const formatPrice = (price, type) => {
   return type === "rent"
@@ -30,9 +31,10 @@ const formatNumber = (num) => {
 export default function PropertyCard({ property, variant = "grid" }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const imgRef = useRef(null);
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { isCompared, toggle: toggleCompare } = useCompare();
+  const compared = isCompared(property.id);
 
   const isFav = isFavorite(property.id);
 
@@ -110,7 +112,23 @@ export default function PropertyCard({ property, variant = "grid" }) {
             </div>
 
             {/* Action Buttons */}
-            <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-2 group-hover:translate-y-0">
+            <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-2 group-hover:translate-y-0 max-lg:opacity-100 max-lg:translate-y-0">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCompare(property.id);
+                }}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center backdrop-blur-sm transition-all duration-300 ${
+                  compared
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
+                    : "bg-white/90 dark:bg-gray-800/90 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 hover:text-blue-600"
+                }}`}
+                aria-label={compared ? "Remove from compare" : "Add to compare"}
+                title={compared ? "Remove from compare" : "Add to compare (up to 3)"}
+              >
+                <GitCompareArrows size={18} />
+              </button>
               <button
                 onClick={handleFavorite}
                 className={`w-10 h-10 rounded-xl flex items-center justify-center backdrop-blur-sm transition-all duration-300 ${
@@ -266,7 +284,23 @@ export default function PropertyCard({ property, variant = "grid" }) {
           </div>
 
           {/* Action Buttons */}
-          <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-2 group-hover:translate-y-0">
+          <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-2 group-hover:translate-y-0 max-lg:opacity-100 max-lg:translate-y-0">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleCompare(property.id);
+              }}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center backdrop-blur-sm transition-all duration-300 ${
+                compared
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
+                  : "bg-white/90 dark:bg-gray-800/90 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 hover:text-blue-600"
+              }}`}
+              aria-label={compared ? "Remove from compare" : "Add to compare"}
+              title={compared ? "Remove from compare" : "Add to compare (up to 3)"}
+            >
+              <GitCompareArrows size={18} />
+            </button>
             <button
               onClick={handleFavorite}
               className={`w-10 h-10 rounded-xl flex items-center justify-center backdrop-blur-sm transition-all duration-300 ${

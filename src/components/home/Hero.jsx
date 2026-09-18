@@ -226,7 +226,7 @@ export default function Hero() {
 
             {/* Quick Features */}
             <div className="grid grid-cols-3 gap-4 pt-4">
-              {features.map((feature, i) => (
+              {features.map((feature) => (
                 <div
                   key={feature.label}
                   className="p-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 transition-all"

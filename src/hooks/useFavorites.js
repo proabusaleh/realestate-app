@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 
-export function useFavorites() {
-  const [favorites, setFavorites] = useState([]);
-
-  // Load from localStorage
-  useEffect(() => {
+function getStoredFavorites() {
+  try {
     const stored = localStorage.getItem("dreamestate_favorites");
-    if (stored) {
-      setFavorites(JSON.parse(stored));
-    }
-  }, []);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function useFavorites() {
+  const [favorites, setFavorites] = useState(getStoredFavorites);
 
   // Save to localStorage
   useEffect(() => {

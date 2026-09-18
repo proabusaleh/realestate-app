@@ -9,8 +9,11 @@ import ContactPage from "./pages/ContactPage";
 import BlogPage from "./pages/BlogPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import BlogDetailPage from "./pages/BlogDetailPage";
+import ComparePage from "./pages/ComparePage";
 
 function App() {
   return (
@@ -19,6 +22,7 @@ function App() {
         {/* Auth pages (no layout) */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
         {/* Admin dashboard (own layout) */}
         <Route path="/admin" element={<AdminDashboard />} />
@@ -36,8 +40,10 @@ function App() {
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/blog" element={<BlogPage />} />
+                <Route path="/blog/:slug" element={<BlogDetailPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/favorites" element={<DashboardPage />} />
+                <Route path="/compare" element={<ComparePage />} />
               </Routes>
             </Layout>
           }

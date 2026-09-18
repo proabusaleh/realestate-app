@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import {
   LayoutDashboard, Building2, Users, MessageSquare,
-  FileText, Settings, TrendingUp, DollarSign,
-  Eye, Plus, Edit3, Trash2, Search, Filter,
-  ChevronDown, CheckCircle, Clock, XCircle,
-  BarChart3, ArrowUpRight, ArrowDownRight,
-  Home, MapPin, BedDouble, Bath, X, Save, Image
+  FileText, Settings, DollarSign,
+  Eye, Plus, Edit3, Trash2, Search,
+  CheckCircle, Clock, XCircle,
+  ArrowUpRight, ArrowDownRight,
+  Home, MapPin, X, Save, Image
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { properties as initialProperties } from "../data/properties";
@@ -361,7 +361,7 @@ export default function AdminDashboard() {
                           <td className="px-6 py-4">
                             <span className="flex items-center gap-1 text-sm text-gray-600">
                               <Eye size={14} />
-                              {Math.floor(Math.random() * 500 + 100)}
+                              {100 + ((p.id * 137) % 400)}
                             </span>
                           </td>
                           <td className="px-6 py-4">

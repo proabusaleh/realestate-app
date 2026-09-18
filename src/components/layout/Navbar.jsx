@@ -18,9 +18,11 @@ import {
   Sun,
   Moon,
   ChevronDown,
+  GitCompareArrows,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useFavorites } from "../../hooks/useFavorites";
+import { useCompare } from "../../context/CompareContext";
 
 const navLinks = [
   { name: "Home", path: "/", icon: HomeIcon },
@@ -31,22 +33,25 @@ const navLinks = [
   { name: "Blog", path: "/blog", icon: ShoppingCart },
 ];
 
+function getInitialTheme() {
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme) return savedTheme === "dark";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(getInitialTheme);
   const [profileOpen, setProfileOpen] = useState(false);
   const location = useLocation();
   const { user, logout, isAuthenticated } = useAuth();
   const { count } = useFavorites();
+  const { count: compareCount } = useCompare();
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initialDark = savedTheme === "dark" || (!savedTheme && prefersDark);
-    setIsDark(initialDark);
-    document.documentElement.classList.toggle("dark", initialDark);
-  }, []);
+    document.documentElement.classList.toggle("dark", isDark);
+  }, [isDark]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -131,6 +136,22 @@ export default function Navbar() {
               {count > 0 && (
                 <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full animate-scale-in">
                   {count}
+                </span>
+              )}
+            </Link>
+
+            {/* Compare */}
+            <Link
+              to="/compare"
+              onClick={closeMobileMenu}
+              className="relative p-2.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 dark:text-gray-300 dark:hover:bg-blue-900/30 rounded-xl transition-all duration-300"
+              aria-label={`Compare properties${compareCount > 0 ? ` (${compareCount})` : ""}`}
+              title="Compare properties"
+            >
+              <GitCompareArrows size={20} />
+              {compareCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full animate-scale-in">
+                  {compareCount}
                 </span>
               )}
             </Link>
@@ -299,6 +320,14 @@ export default function Navbar() {
                 >
                   <Heart size={20} className="text-red-500" />
                   Favorites ({count})
+                </Link>
+                <Link
+                  to="/compare"
+                  onClick={closeMobileMenu}
+                  className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 rounded-xl font-medium"
+                >
+                  <GitCompareArrows size={20} className="text-blue-500" />
+                  Compare ({compareCount})
                 </Link>
                 <button
                   onClick={handleLogout}

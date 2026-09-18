@@ -6,39 +6,44 @@ import PropertyCard from "../components/home/PropertyCard";
 import PropertyCardSkeleton from "../components/home/PropertyCardSkeleton";
 import PropertyFilters from "../components/properties/PropertyFilters";
 
+const CATEGORIES = ["house", "apartment", "villa", "commercial"];
+
+// Seed filters from Hero search (?location=&type=&minPrice=&maxPrice=&listingType=)
+function readSearchState(searchParams) {
+  return {
+    query: searchParams.get("location") || "",
+    filters: {
+      type:
+        searchParams.get("listingType") === "rent" || searchParams.get("listingType") === "sale"
+          ? searchParams.get("listingType")
+          : "all",
+      category: CATEGORIES.includes(searchParams.get("type"))
+        ? searchParams.get("type")
+        : "all",
+      minPrice: searchParams.get("minPrice") || "",
+      maxPrice: searchParams.get("maxPrice") || "",
+      bedrooms: "any",
+      sortBy: "newest",
+    },
+  };
+}
+
 export default function PropertiesPage() {
   const [searchParams] = useSearchParams();
   const [view, setView] = useState("grid");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => readSearchState(searchParams).query);
   const [loading, setLoading] = useState(true);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    type: "all",
-    category: "all",
-    minPrice: "",
-    maxPrice: "",
-    bedrooms: "any",
-    sortBy: "newest",
-  });
+  const [filters, setFilters] = useState(() => readSearchState(searchParams).filters);
+  const [syncedParams, setSyncedParams] = useState(() => searchParams.toString());
 
-  // Seed filters from Hero search (?location=&type=&minPrice=&maxPrice=&listingType=)
-  useEffect(() => {
-    const location = searchParams.get("location") || "";
-    const type = searchParams.get("type") || "all";
-    const listingType = searchParams.get("listingType");
-    const minPrice = searchParams.get("minPrice") || "";
-    const maxPrice = searchParams.get("maxPrice") || "";
-    if (location || type !== "all" || listingType || minPrice || maxPrice) {
-      setSearchQuery(location);
-      setFilters((f) => ({
-        ...f,
-        category: ["house", "apartment", "villa", "commercial"].includes(type) ? type : "all",
-        type: listingType === "rent" || listingType === "sale" ? listingType : "all",
-        minPrice,
-        maxPrice,
-      }));
-    }
-  }, [searchParams]);
+  // Re-sync when navigating with new search params (e.g. footer category links)
+  if (searchParams.toString() !== syncedParams) {
+    const next = readSearchState(searchParams);
+    setSyncedParams(searchParams.toString());
+    setSearchQuery(next.query);
+    setFilters(next.filters);
+  }
 
   // Simulate fetch for skeleton UX
   useEffect(() => {

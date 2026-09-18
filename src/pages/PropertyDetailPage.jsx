@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   MapPin, BedDouble, Bath, Maximize, Calendar,
@@ -6,10 +6,16 @@ import {
   Heart, Share2, Phone, Mail, ChevronLeft,
   ChevronRight, Star, Send, CheckCircle, Home,
   Calculator, X, Expand, Printer, ArrowLeft,
+  CalendarCheck, GitCompareArrows,
 } from "lucide-react";
 import { properties } from "../data/properties";
 import { useFavorites } from "../hooks/useFavorites";
+import { useCompare } from "../context/CompareContext";
+import { useToast } from "../context/ToastContext";
+import { recordView } from "../utils/recentViews";
 import PropertyCard from "../components/home/PropertyCard";
+
+const TOUR_TIMES = ["9:00 AM", "10:30 AM", "12:00 PM", "2:00 PM", "3:30 PM", "5:00 PM"];
 
 const amenityIcons = {
   Pool: Waves, Garage: Car, Garden: Trees,
@@ -26,7 +32,19 @@ export default function PropertyDetailPage() {
   const [downPayment, setDownPayment] = useState(20);
   const [rate, setRate] = useState(6.5);
   const [years, setYears] = useState(30);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [tourDate, setTourDate] = useState("");
+  const [tourTime, setTourTime] = useState(TOUR_TIMES[1]);
+  const [tourType, setTourType] = useState("In-person");
+  const [tourSent, setTourSent] = useState(false);
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { isCompared, toggle: toggleCompare } = useCompare();
+  const toast = useToast();
+  const compared = property ? isCompared(property.id) : false;
+
+  useEffect(() => {
+    if (property) recordView(property.id);
+  }, [property]);
 
   const similar = useMemo(
     () =>
@@ -71,7 +89,18 @@ export default function PropertyDetailPage() {
   const handleInquiry = (e) => {
     e.preventDefault();
     setInquirySent(true);
+    toast.success("Inquiry sent to the listing agent");
     setTimeout(() => setInquirySent(false), 4000);
+  };
+
+  const handleTourSubmit = (e) => {
+    e.preventDefault();
+    setTourSent(true);
+    toast.success(
+      tourDate
+        ? `Tour scheduled for ${tourDate} at ${tourTime}`
+        : `Tour request sent for ${tourTime}`
+    );
   };
 
   const prevImage = () =>
@@ -322,19 +351,28 @@ export default function PropertyDetailPage() {
             {/* Location */}
             <div className="card p-6 sm:p-8">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Location</h2>
-              <div className="h-72 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-600">
-                <div className="text-center text-gray-400 dark:text-gray-500">
-                  <MapPin size={48} className="mx-auto mb-2" />
-                  <p className="font-medium text-gray-600 dark:text-gray-300">{property.address}</p>
-                  <p className="text-xs mt-1">Lat: {property.lat}, Lng: {property.lng}</p>
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${property.lat},${property.lng}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-xl font-medium hover:bg-blue-700 transition"
-                  >
-                    Open in Maps
-                  </a>
+              <div className="relative h-72 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-soft">
+                <iframe
+                  title={`Map showing ${property.address}`}
+                  loading="lazy"
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${property.lng - 0.03}%2C${property.lat - 0.02}%2C${property.lng + 0.03}%2C${property.lat + 0.02}&layer=mapnik&marker=${property.lat}%2C${property.lng}`}
+                  className="absolute inset-0 w-full h-full border-0"
+                />
+                <div className="absolute bottom-3 left-3 right-3 sm:right-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg flex items-center gap-3">
+                  <div className="w-9 h-9 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center shrink-0">
+                    <MapPin size={18} className="text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{property.address}</p>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${property.lat},${property.lng}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Open in Google Maps
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -369,6 +407,27 @@ export default function PropertyDetailPage() {
                   <Mail size={18} className="text-blue-600 dark:text-blue-400" />
                   <span className="text-sm font-medium text-gray-800 dark:text-gray-200">agent@dreamestate.com</span>
                 </a>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <button
+                  onClick={() => { setTourSent(false); setTourOpen(true); }}
+                  className="flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 active:scale-[0.99] transition text-sm shadow-lg shadow-blue-600/25"
+                >
+                  <CalendarCheck size={16} />
+                  Schedule Tour
+                </button>
+                <button
+                  onClick={() => toggleCompare(property.id)}
+                  className={`flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition text-sm border-2 ${
+                    compared
+                      ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
+                      : "bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                  }`}
+                >
+                  <GitCompareArrows size={16} />
+                  {compared ? "Compared" : "Compare"}
+                </button>
               </div>
 
               <h3 className="font-bold text-gray-900 dark:text-white mb-3">Send Inquiry</h3>
@@ -418,6 +477,124 @@ export default function PropertyDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Schedule Tour Modal */}
+      {tourOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setTourOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Schedule a tour"
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {tourSent ? (
+              <div className="text-center py-4 animate-scale-in">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle size={32} className="text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Tour Requested!
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-1">
+                  {tourType} tour{tourDate ? ` on ${tourDate}` : ""} at {tourTime}
+                </p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+                  {property.agent} will confirm shortly.
+                </p>
+                <button
+                  onClick={() => setTourOpen(false)}
+                  className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-start justify-between mb-6">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      Schedule a Tour
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                      {property.title}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setTourOpen(false)}
+                    className="p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition"
+                    aria-label="Close"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+                <form onSubmit={handleTourSubmit} className="space-y-5">
+                  <div>
+                    <label className="label">Tour type</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {["In-person", "Video call"].map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setTourType(t)}
+                          className={`py-2.5 rounded-xl text-sm font-medium transition ${
+                            tourType === t
+                              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
+                              : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="tour-date" className="label">Preferred date</label>
+                    <input
+                      id="tour-date"
+                      type="date"
+                      required
+                      value={tourDate}
+                      min={new Date().toISOString().split("T")[0]}
+                      onChange={(e) => setTourDate(e.target.value)}
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Preferred time</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {TOUR_TIMES.map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setTourTime(t)}
+                          className={`py-2 rounded-xl text-xs font-medium transition ${
+                            tourTime === t
+                              ? "bg-blue-600 text-white shadow"
+                              : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full flex items-center justify-center gap-2 py-3.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition shadow-lg shadow-blue-600/30"
+                  >
+                    <CalendarCheck size={18} />
+                    Confirm Tour Request
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Lightbox */}
       {lightbox && (
